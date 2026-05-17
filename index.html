@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta name="theme-color" content="#030308"/>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <title>MKEYZ · Control v7</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:     #030308;
+      --card:   rgba(13,13,26,0.85);
+      --s2:     #111120;
+      --border: rgba(255,255,255,0.06);
+      --mint:   #00F5A0;
+      --pink:   #FF2D78;
+      --purple: #7C3AFF;
+      --gold:   #FFB830;
+      --blue:   #00E5FF;
+      --text:   #E0E0F0;
+      --muted:  #7A7A9A;
+      --dim:    #2A2A44;
+      --r-lg:   18px;
+      --r-md:   12px;
+      --r-sm:   8px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{
+      background:var(--bg);color:var(--text);
+      font-family:'Syne',sans-serif;
+      min-height:100vh;
+      padding:0 0 80px;
+      overflow-x:hidden;
+      -webkit-font-smoothing:antialiased;
+    }
+    ::-webkit-scrollbar{width:4px;height:4px;}
+    ::-webkit-scrollbar-thumb{background:var(--dim);border-radius:4px;}
+
+    /* ── BACKGROUND ── */
+    .bg-fx{
+      position:fixed;inset:0;z-index:-2;pointer-events:none;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(0,245,160,.05) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(255,45,120,.05) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(124,58,255,.03) 0%, transparent 60%);
+    }
+    .grid-fx{
+      position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.25;
+      background-image:
+        linear-gradient(var(--border) 1px,transparent 1px),
+        linear-gradient(90deg,var(--border) 1px,transparent 1px);
+      background-size:44px 44px;
+    }
+
+    /* ── HEADER ── */
+    #hdr{
+      position:sticky;top:0;z-index:200;
+      background:rgba(3,3,8,.94);backdrop-filter:blur(20px);
+      border-bottom:1px solid var(--border);
+      padding:14px 18px 12px;
+    }
+    .hdr-inner{display:flex;align-items:center;justify-content:space-between;}
+    .brand{
+      font-family:'Space Mono',monospace;font-size:18px;font-weight:700;
+      letter-spacing:.15em;
+      background:linear-gradient(90deg,#fff 20%,var(--mint),var(--pink));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    }
+    .version{font-family:'Space Mono',monospace;font-size:8px;color:var(--dim);letter-spacing:.2em;margin-top:2px;}
+
+    /* ── KPIs ── */
+    #kpiGrid{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+      padding:12px 18px 0;
+    }
+    .kpi{
+      background:var(--card);backdrop-filter:blur(16px);
+      border:1px solid var(--border);border-radius:var(--r-md);
+      padding:12px 10px;text-align:center;cursor:pointer;
+      transition:border-color .2s;
+    }
+    .kpi:active{border-color:var(--mint);}
+    .kpi-val{
+      font-family:'Space Mono',monospace;font-size:20px;font-weight:700;
+      color:var(--mint);line-height:1;
+    }
+    .kpi-lbl{font-family:'Space Mono',monospace;font-size:7px;color:var(--muted);
+      letter-spacing:.12em;margin-top:4px;text-transform:uppercase;}
+    .kpi-delta{font-family:'Space Mono',monospace;font-size:9px;font-weight:700;
+      color:var(--mint);margin-top:3px;}
+    .kpi-delta.down{color:var(--pink);}
+
+    /* ── TABS ── */
+    #tabBar{
+      display:flex;gap:4px;padding:10px 18px 0;
+      overflow-x:auto;scrollbar-width:none;
+    }
+    #tabBar::-webkit-scrollbar{display:none;}
+    .tab{
+      flex-shrink:0;padding:9px 14px;border-radius:var(--r-sm);
+      font-family:'Space Mono',monospace;font-size:9px;font-weight:700;
+      letter-spacing:.08em;cursor:pointer;white-space:nowrap;
+      border:1px solid var(--border);background:var(--card);
+      color:var(--muted);transition:all .2s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .tab.active{
+      background:rgba(0,245,160,.1);border-color:rgba(0,245,160,.35);
+      color:var(--mint);
+    }
+
+    /* ── PANELS ── */
+    .panel{display:none;padding:14px 18px 0;}
+    .panel.active{display:flex;flex-direction:column;gap:12px;animation:fadeIn .25s ease;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ── CARDS ── */
+    .card{
+      background:var(--card);backdrop-filter:blur(16px);
+      border:1px solid var(--border);border-radius:var(--r-lg);
+      padding:16px;
+    }
+    .card.accent-mint{border-color:rgba(0,245,160,.2);}
+    .card.accent-gold{border-color:rgba(255,184,48,.2);}
+    .card.accent-pink{border-color:rgba(255,45,120,.2);}
+    .card.accent-purple{border-color:rgba(124,58,255,.2);}
+
+    .sec{
+      font-family:'Space Mono',monospace;font-size:8px;font-weight:700;
+      letter-spacing:.22em;text-transform:uppercase;
+      color:var(--mint);margin-bottom:12px;
+      display:flex;align-items:center;gap:8px;
+    }
+    .sec::before{content:'';width:14px;height:1px;background:var(--mint);}
+    .sec.gold{color:var(--gold);}
+    .sec.gold::before{background:var(--gold);}
+    .sec.pink{color:var(--pink);}
+    .sec.pink::before{background:var(--pink);}
+    .sec.purple{color:var(--purple);}
+    .sec.purple::before{background:var(--purple);}
+
+    /* ── FORMS ── */
+    .lbl{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);
+      letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;display:block;}
+    input,select,textarea{
+      width:100%;padding:10px 12px;
+      background:rgba(0,0,0,.4);border:1px solid var(--border);
+      border-radius:var(--r-sm);color:var(--text);
+      font-family:'Space Mono',monospace;font-size:11px;outline:none;
+      margin-bottom:8px;transition:border-color .2s;
+    }
+    input:focus,select:focus,textarea:focus{border-color:rgba(0,245,160,.4);}
+    select option{background:#0D0D1A;}
+    textarea{resize:vertical;min-height:56px;line-height:1.6;}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+    /* ── BUTTONS ── */
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:6px;
+      padding:11px 16px;border:none;border-radius:var(--r-md);
+      font-family:'Space Mono',monospace;font-size:10px;font-weight:700;
+      letter-spacing:.08em;cursor:pointer;transition:all .15s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .btn:active{transform:scale(.96);}
+    .btn-mint{background:var(--mint);color:#000;width:100%;}
+    .btn-gold{background:var(--gold);color:#000;width:100%;}
+    .btn-purple{background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;width:100%;}
+    .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+    .btn-danger{background:rgba(255,45,120,.1);border:1px solid rgba(255,45,120,.2);color:var(--pink);}
+    .btn-sm{padding:6px 10px;font-size:8px;width:auto;}
+
+    /* ── PIPELINE ── */
+    .pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px;}
+    @media(max-width:480px){.pipeline{grid-template-columns:repeat(2,1fr);}}
+    .slot{
+      background:rgba(255,255,255,.01);border:1px solid var(--border);
+      border-radius:var(--r-md);padding:12px 8px;text-align:center;
+      min-height:110px;display:flex;flex-direction:column;justify-content:space-between;
+      transition:border-color .2s;
+    }
+    .slot.filled{border-color:rgba(0,245,160,.3);background:rgba(0,245,160,.02);}
+    .slot-w{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;}
+    .slot-d{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--mint);margin:3px 0;}
+    .slot-t{font-size:11px;font-weight:700;color:#fff;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+    .slot-empty{color:var(--dim);font-size:11px;font-style:italic;}
+    .slot-st{font-family:'Space Mono',monospace;font-size:7px;padding:2px 6px;border-radius:10px;font-weight:700;text-transform:uppercase;align-self:center;}
+    .st-ready{background:rgba(0,245,160,.1);color:var(--mint);}
+    .st-pending{background:rgba(255,255,255,.04);color:var(--muted);}
+    .st-mix{background:rgba(0,229,255,.08);color:var(--blue);}
+    .st-master{background:rgba(255,45,120,.08);color:var(--pink);}
+
+    /* ── SONG CARDS ── */
+    .song-card{
+      background:rgba(255,255,255,.01);border:1px solid var(--border);
+      border-radius:var(--r-md);padding:12px;margin-bottom:8px;
+    }
+    .song-row{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+    .song-name{font-size:14px;font-weight:700;color:#fff;}
+    .song-meta{display:flex;align-items:center;gap:6px;margin-top:3px;}
+    .genre-tag{
+      font-family:'Space Mono',monospace;font-size:7px;padding:2px 7px;
+      border-radius:10px;font-weight:700;text-transform:uppercase;
+      background:rgba(0,245,160,.08);color:var(--mint);border:1px solid rgba(0,245,160,.15);
+    }
+    .song-actions{display:flex;gap:5px;align-items:center;flex-shrink:0;}
+    .chk-box{
+      margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);
+      display:none;
+    }
+    .chk-box.open{display:block;}
+    .chk-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+    .chk-item{
+      display:flex;align-items:center;gap:6px;
+      font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);
+      cursor:pointer;padding:4px 0;
+    }
+    .chk-item input{width:14px;height:14px;accent-color:var(--mint);cursor:pointer;margin:0;padding:0;}
+    .chk-item.done{color:#fff;}
+
+    /* ── CONTENT GRID ── */
+    .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+    @media(max-width:480px){.week-grid{grid-template-columns:repeat(4,1fr);}}
+    .day-col{
+      background:rgba(255,255,255,.01);border:1px solid var(--border);
+      border-radius:var(--r-sm);padding:8px 4px;text-align:center;
+    }
+    .day-n{font-family:'Space Mono',monospace;font-size:9px;font-weight:700;color:var(--mint);margin-bottom:6px;}
+    .day-slots{display:flex;flex-direction:column;gap:4px;}
+    .dslot{
+      background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:5px;
+      padding:5px 2px;font-size:11px;cursor:pointer;transition:all .15s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .dslot.done{background:rgba(0,245,160,.06);border-color:rgba(0,245,160,.2);color:var(--mint);}
+    .time-badge{
+      font-family:'Space Mono',monospace;font-size:7px;color:var(--muted);
+      display:block;margin-top:1px;letter-spacing:.03em;
+    }
+
+    /* ── COPY GENERATOR ── */
+    .copy-out{
+      background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--r-md);
+      padding:12px;margin-top:10px;font-family:'Space Mono',monospace;font-size:11px;
+      line-height:1.7;color:var(--text);white-space:pre-wrap;display:none;
+    }
+    .copy-out.show{display:block;}
+
+    /* ── PRESET DB ── */
+    .db-title{
+      font-family:'Space Mono',monospace;font-size:8px;font-weight:700;
+      letter-spacing:.15em;color:var(--gold);text-transform:uppercase;
+      margin:12px 0 8px;
+    }
+    .db-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;margin-bottom:10px;}
+    .db-item{
+      background:rgba(255,255,255,.02);border:1px solid var(--border);
+      border-radius:var(--r-sm);padding:9px 8px;cursor:pointer;
+      font-size:11px;font-weight:700;color:var(--text);text-align:center;
+      transition:all .15s;-webkit-tap-highlight-color:transparent;
+    }
+    .db-item:active{transform:scale(.96);}
+    .db-item.suno:active,
+    .db-item.suno:hover{border-color:rgba(0,245,160,.4);background:rgba(0,245,160,.05);}
+    .db-item.leo:active,
+    .db-item.leo:hover{border-color:rgba(255,45,120,.4);background:rgba(255,45,120,.05);}
+    .db-sub{display:block;font-size:7px;color:var(--muted);font-weight:500;
+      text-transform:uppercase;margin-top:2px;letter-spacing:.08em;}
+
+    /* ── PROMPT CARDS ── */
+    .prompt-card{
+      background:rgba(255,255,255,.01);border:1px solid var(--border);
+      border-radius:var(--r-md);padding:12px;margin-bottom:8px;
+    }
+    .prompt-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+    .prompt-title{font-size:13px;font-weight:700;color:#fff;}
+    .pbadge{font-family:'Space Mono',monospace;font-size:7px;padding:2px 7px;border-radius:8px;font-weight:700;text-transform:uppercase;}
+    .pb-suno{background:rgba(0,245,160,.08);color:var(--mint);border:1px solid rgba(0,245,160,.2);}
+    .pb-leo{background:rgba(255,45,120,.08);color:var(--pink);border:1px solid rgba(255,45,120,.2);}
+    .pb-claude{background:rgba(124,58,255,.08);color:var(--purple);border:1px solid rgba(124,58,255,.2);}
+    .pb-fx{background:rgba(0,229,255,.08);color:var(--blue);border:1px solid rgba(0,229,255,.2);}
+    .prompt-txt{
+      font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);
+      background:rgba(0,0,0,.25);padding:8px 10px;border-radius:6px;
+      max-height:44px;overflow:hidden;cursor:pointer;line-height:1.6;
+      transition:max-height .3s;
+    }
+    .prompt-txt.open{max-height:300px;color:var(--text);}
+    .prompt-acts{display:flex;gap:5px;margin-top:8px;justify-content:flex-end;}
+
+    /* ── FILTER CHIPS ── */
+    .chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+    .chip{
+      font-family:'Space Mono',monospace;font-size:8px;font-weight:700;
+      padding:4px 10px;border-radius:20px;border:1px solid var(--border);
+      background:var(--s2);color:var(--muted);cursor:pointer;transition:all .2s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .chip.active{background:rgba(255,184,48,.1);border-color:rgba(255,184,48,.3);color:var(--gold);}
+
+    /* ── ANALYTICS ── */
+    .chart-wrap{
+      display:flex;align-items:flex-end;justify-content:space-between;
+      height:120px;padding:8px 8px 0;
+      background:rgba(0,0,0,.2);border-radius:var(--r-md);border:1px solid var(--border);
+      gap:6px;margin-bottom:12px;
+    }
+    .bar-w{display:flex;flex-direction:column;align-items:center;flex:1;height:100%;justify-content:flex-end;}
+    .bar{
+      width:100%;border-radius:3px 3px 0 0;min-height:3px;
+      background:linear-gradient(0deg,rgba(0,245,160,.15),var(--mint));
+      position:relative;transition:height .4s ease;
+    }
+    .bar-w:nth-child(even) .bar{background:linear-gradient(0deg,rgba(255,45,120,.1),var(--pink));}
+    .bar-w:nth-child(3n) .bar{background:linear-gradient(0deg,rgba(124,58,255,.1),var(--purple));}
+    .bv{position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+      font-family:'Space Mono',monospace;font-size:8px;font-weight:700;color:#fff;white-space:nowrap;}
+    .bl{font-family:'Space Mono',monospace;font-size:7px;color:var(--muted);margin-top:4px;text-align:center;}
+
+    /* ── QUICK NOTES ── */
+    .note-card{
+      background:rgba(255,255,255,.02);border:1px solid var(--border);
+      border-radius:var(--r-md);padding:12px;margin-bottom:6px;
+      cursor:pointer;transition:all .15s;
+    }
+    .note-card:active{transform:scale(.98);}
+    .note-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;}
+    .note-tag{font-family:'Space Mono',monospace;font-size:7px;padding:2px 7px;border-radius:8px;font-weight:700;}
+    .nt-beat{background:rgba(0,245,160,.08);color:var(--mint);border:1px solid rgba(0,245,160,.2);}
+    .nt-letra{background:rgba(255,184,48,.08);color:var(--gold);border:1px solid rgba(255,184,48,.2);}
+    .nt-visual{background:rgba(255,45,120,.08);color:var(--pink);border:1px solid rgba(255,45,120,.2);}
+    .nt-idea{background:rgba(124,58,255,.08);color:var(--purple);border:1px solid rgba(124,58,255,.2);}
+    .note-date{font-family:'Space Mono',monospace;font-size:7px;color:var(--dim);}
+    .note-text{font-size:12px;color:var(--text);line-height:1.5;}
+
+    /* ── TOAST ── */
+    .toast{
+      position:fixed;bottom:28px;left:50%;transform:translate(-50%,16px);
+      background:#fff;color:#000;padding:9px 18px;border-radius:24px;
+      font-family:'Space Mono',monospace;font-weight:700;font-size:11px;
+      z-index:999;opacity:0;pointer-events:none;transition:all .25s;
+      white-space:nowrap;
+    }
+    .toast.show{opacity:1;transform:translate(-50%,0);}
+
+    /* ── KPI EDIT MODAL ── */
+    #kpiModal{
+      position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.85);
+      backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;
+    }
+    #kpiModal.open{display:flex;}
+    #kpiModalBox{
+      width:100%;max-width:440px;background:#0D0D1A;
+      border-radius:24px 24px 0 0;border:1px solid var(--border);
+      padding:24px 20px 48px;animation:slideUp .3s cubic-bezier(.16,1,.3,1);
+    }
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .modal-handle{width:32px;height:3px;background:var(--dim);border-radius:2px;margin:0 auto 18px;}
+    .modal-title{font-size:16px;font-weight:800;color:#fff;margin-bottom:14px;}
+  </style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="grid-fx"></div>
+
+<!-- HEADER -->
+<div id="hdr">
+  <div class="hdr-inner">
+    <div>
+      <div class="brand">MKEYZ</div>
+      <div class="version">CONTROL v7 · MUSICCODEXBOX</div>
+    </div>
+    <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);" id="hdrDate"></div>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div id="kpiGrid">
+  <div class="kpi" onclick="openKpiModal(0)">
+    <div class="kpi-val" id="k0v">—</div>
+    <div class="kpi-lbl" id="k0l">Oyentes</div>
+    <div class="kpi-delta" id="k0d"></div>
+  </div>
+  <div class="kpi" onclick="openKpiModal(1)">
+    <div class="kpi-val" id="k1v">—</div>
+    <div class="kpi-lbl" id="k1l">Streams</div>
+    <div class="kpi-delta" id="k1d"></div>
+  </div>
+  <div class="kpi" onclick="openKpiModal(2)">
+    <div class="kpi-val" id="k2v">—</div>
+    <div class="kpi-lbl" id="k2l">Watch Hrs</div>
+    <div class="kpi-delta" id="k2d"></div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div id="tabBar">
+  <div class="tab active" data-panel="launch">🚀 PIPELINE</div>
+  <div class="tab" data-panel="content">🎬 CONTENIDO</div>
+  <div class="tab" data-panel="prompts">🧠 ARQUITECTO</div>
+  <div class="tab" data-panel="notes">⚡ NOTAS</div>
+  <div class="tab" data-panel="analytics">📈 ANALÍTICA</div>
+</div>
+
+<!-- PANEL: PIPELINE -->
+<div class="panel active" id="panelLaunch">
+  <div class="card accent-mint">
+    <div class="sec">Pipeline — próximos viernes</div>
+    <div class="pipeline" id="pipelineEl"></div>
+  </div>
+  <div class="card">
+    <div class="sec">Registrar producción</div>
+    <div class="row2">
+      <div><label class="lbl">Nombre del track</label><input id="sName" placeholder="No Te Pienso"/></div>
+      <div><label class="lbl">Género</label><input id="sGenre" placeholder="Bachata, Dembow..."/></div>
+    </div>
+    <div class="row2">
+      <div>
+        <label class="lbl">Estado</label>
+        <select id="sStatus">
+          <option value="draft">Borrador</option>
+          <option value="mix">Mezcla</option>
+          <option value="master">Master</option>
+          <option value="ready">Listo Final</option>
+        </select>
+      </div>
+      <div><label class="lbl">Fecha release</label><input type="date" id="sDate"/></div>
+    </div>
+    <button class="btn btn-mint" id="addSongBtn">+ Añadir al catálogo</button>
+  </div>
+  <div class="card">
+    <div class="sec">Biblioteca & Auditorías</div>
+    <div id="songsEl"></div>
+  </div>
+</div>
+
+<!-- PANEL: CONTENIDO -->
+<div class="panel" id="panelContent">
+  <div class="card">
+    <div class="sec">Planificador semanal — 14 slots</div>
+    <div class="week-grid" id="weekGrid"></div>
+    <div style="display:flex;gap:6px;margin-top:10px;">
+      <button class="btn btn-ghost btn-sm" id="resetWeekBtn">↺ Limpiar semana</button>
+    </div>
+  </div>
+
+  <div class="card accent-gold">
+    <div class="sec gold">Generador de copies & ganchos</div>
+    <div class="row2">
+      <div>
+        <label class="lbl">Canción</label>
+        <select id="copySong"><option value="">— General —</option></select>
+      </div>
+      <div>
+        <label class="lbl">Género del copy</label>
+        <select id="copyGenre">
+          <option value="trap">Trap Latino</option>
+          <option value="dembow">Dembow</option>
+          <option value="afrobeat">Afrobeat</option>
+          <option value="bachata">Bachata</option>
+          <option value="rnb">R&B</option>
+          <option value="pop">Pop Urbano</option>
+          <option value="drill">Drill</option>
+        </select>
+      </div>
+    </div>
+    <label class="lbl">Ángulo</label>
+    <select id="copyAngle" style="margin-bottom:10px;">
+      <option value="hype">🎯 Intriga / Curiosidad</option>
+      <option value="drop">🔥 Lanzamiento oficial</option>
+      <option value="bts">🎛️ Proceso / Estudio</option>
+      <option value="desamor">💔 Desamor / Sentimientos</option>
+      <option value="calle">🏙️ Calle / Flow / Actitud</option>
+      <option value="teaser">👀 Teaser pre-release</option>
+    </select>
+    <button class="btn btn-gold" id="genCopyBtn">⚡ Generar copy</button>
+    <div class="copy-out" id="copyOut"></div>
+    <button class="btn btn-ghost btn-sm" id="copyCopyBtn" style="margin-top:6px;display:none;">📋 Copiar texto</button>
+  </div>
+</div>
+
+<!-- PANEL: ARQUITECTO -->
+<div class="panel" id="panelPrompts">
+  <div class="card accent-gold">
+    <div class="sec gold">Base de datos — Suno AI</div>
+    <div class="db-title">🎵 Ritmos & Subgéneros</div>
+    <div class="db-grid" id="dbGenres"></div>
+    <div class="db-title">🗣️ Arquitectura Vocal</div>
+    <div class="db-grid" id="dbVocals"></div>
+    <div class="db-title">🌌 Texturas & Atmósferas</div>
+    <div class="db-grid" id="dbAtmos"></div>
+    <hr style="border:0;height:1px;background:var(--border);margin:12px 0;"/>
+    <div class="row2">
+      <div><label class="lbl">Ritmo / Estilo (Suno tag)</label><input id="archStyle" placeholder="Tap en presets o escribe..."/></div>
+      <div><label class="lbl">Vocal (Suno tag)</label><input id="archVocal" placeholder="Tap en presets..."/></div>
+    </div>
+    <div class="row2">
+      <div><label class="lbl">Sección A [Verse]</label><textarea id="archA" rows="2" placeholder="Letras..."></textarea></div>
+      <div><label class="lbl">Sección B [Chorus]</label><textarea id="archB" rows="2" placeholder="Letras..."></textarea></div>
+    </div>
+    <button class="btn btn-gold" id="buildSunoBtn">⚙️ Compilar estructura Suno</button>
+  </div>
+
+  <div class="card accent-pink">
+    <div class="sec pink">Base de datos — Leonardo AI</div>
+    <div class="db-title">🖼️ Portadas & Covers</div>
+    <div class="db-grid" id="dbLeoCovers"></div>
+    <div class="db-title">📸 Contenido Visual & Posts</div>
+    <div class="db-grid" id="dbLeoContent"></div>
+    <div class="db-title">✨ Efectos & Filtros TikTok</div>
+    <div class="db-grid" id="dbLeoFx"></div>
+    <hr style="border:0;height:1px;background:var(--border);margin:12px 0;"/>
+    <div><label class="lbl">Prompt Leonardo compilado</label><textarea id="leoPrompt" rows="3" placeholder="Toca los presets o escribe tu prompt visual..."></textarea></div>
+    <button class="btn btn-purple" id="saveLeoBtn">💾 Guardar en repositorio</button>
+  </div>
+
+  <div class="card">
+    <div class="sec">Repositorio guardado</div>
+    <div class="chips" id="promptChips">
+      <div class="chip active" data-f="all">TODOS</div>
+      <div class="chip" data-f="suno">SUNO</div>
+      <div class="chip" data-f="leonardo">LEONARDO</div>
+      <div class="chip" data-f="claude">CLAUDE</div>
+      <div class="chip" data-f="fx">EFFECT HOUSE</div>
+    </div>
+    <div id="promptList"></div>
+    <hr style="border:0;height:1px;background:var(--border);margin:12px 0;"/>
+    <div class="sec">Añadir prompt manual</div>
+    <div class="row2">
+      <div><label class="lbl">Título</label><input id="pTitle" placeholder="Arte minimalista oscuro"/></div>
+      <div>
+        <label class="lbl">Motor</label>
+        <select id="pType">
+          <option value="suno">Suno AI</option>
+          <option value="leonardo">Leonardo AI</option>
+          <option value="claude">Claude / ChatGPT</option>
+          <option value="fx">Effect House</option>
+        </select>
+      </div>
+    </div>
+    <textarea id="pText" rows="2" placeholder="Parámetros del prompt..."></textarea>
+    <button class="btn btn-mint" id="addPromptBtn">💾 Guardar en repositorio</button>
+  </div>
+</div>
+
+<!-- PANEL: NOTAS RÁPIDAS -->
+<div class="panel" id="panelNotes">
+  <div class="card">
+    <div class="sec">Captura rápida de ideas</div>
+    <div class="row2">
+      <div>
+        <label class="lbl">Tipo</label>
+        <select id="noteType">
+          <option value="beat">Beat / Producción</option>
+          <option value="letra">Letra / Hook</option>
+          <option value="visual">Idea Visual</option>
+          <option value="idea">Idea General</option>
+        </select>
+      </div>
+      <div><label class="lbl">Tag de género (opcional)</label><input id="noteGenre" placeholder="Bachata, Dembow..."/></div>
+    </div>
+    <textarea id="noteText" rows="3" placeholder="Escribe la idea antes de que se te olvide..."></textarea>
+    <button class="btn btn-purple" id="addNoteBtn">⚡ Guardar idea</button>
+  </div>
+  <div class="card">
+    <div class="sec">Ideas guardadas</div>
+    <div class="chips" id="noteChips">
+      <div class="chip active" data-f="all">TODAS</div>
+      <div class="chip" data-f="beat">BEATS</div>
+      <div class="chip" data-f="letra">LETRAS</div>
+      <div class="chip" data-f="visual">VISUAL</div>
+      <div class="chip" data-f="idea">IDEAS</div>
+    </div>
+    <div id="notesList"></div>
+  </div>
+</div>
+
+<!-- PANEL: ANALÍTICA -->
+<div class="panel" id="panelAnalytics">
+  <div class="card">
+    <div class="sec">Historial de tracción</div>
+    <div class="chart-wrap" id="chartEl"></div>
+    <div class="row2" style="margin-top:10px;">
+      <div><label class="lbl">Etiqueta</label><input id="statL" placeholder="Sem 4 / Track B"/></div>
+      <div><label class="lbl">Valor</label><input type="number" id="statV" placeholder="2400"/></div>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-mint" id="addStatBtn" style="flex:1;">+ Graficar</button>
+      <button class="btn btn-danger btn-sm" id="resetStatBtn">Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- KPI MODAL -->
+<div id="kpiModal" onclick="closeKpiModal(event)">
+  <div id="kpiModalBox">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="kpiModalTitle">Editar KPI</div>
+    <label class="lbl">Valor</label>
+    <input id="kpiVal" type="text" placeholder="1,105" style="margin-bottom:10px;"/>
+    <label class="lbl">Etiqueta</label>
+    <input id="kpiLbl" type="text" placeholder="Oyentes" style="margin-bottom:10px;"/>
+    <label class="lbl">Delta (ej: ↑ 43%)</label>
+    <input id="kpiDelta" type="text" placeholder="↑ 43%" style="margin-bottom:14px;"/>
+    <button class="btn btn-mint" onclick="saveKpi()">Guardar KPI</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(()=>{
+  // ── KEYS ──────────────────────────────────────────────────
+  const K={
+    SONGS:'mkeyz_songs_v7', PROMPTS:'mkeyz_prompts_v7',
+    CONTENT:'mkeyz_content_v7', STATS:'mkeyz_stats_v7',
+    NOTES:'mkeyz_notes_v7', KPIS:'mkeyz_kpis_v7'
+  };
+
+  // ── STATE ──────────────────────────────────────────────────
+  let S={
+    songs: load(K.SONGS,[]),
+    prompts: load(K.PROMPTS, [
+      {id:1,title:'Afro Oscuro Pesado',type:'suno',prompt:'Dark and heavy Afrobeat, slow crushing sub-bass, syncopated congas, physical low-end weight, 95 BPM, minor keys'},
+      {id:2,title:'Cover Trono Oscuro',type:'leonardo',prompt:'Ultra-realistic photo of an empty weathered leather throne on a rooftop at night, cinematic lighting, purple and gold tones, no people, dark luxury aesthetic, square format'},
+      {id:3,title:'Hook Dembow Callejero',type:'claude',prompt:'Genera un hook de 4 líneas para dembow dominicano. Estilo: calle, tigueraje, directo. Sin rima forzada. Que suene natural al habla RD.'},
+    ]),
+    content: load(K.CONTENT, {}),
+    stats: load(K.STATS, [{l:'Sem 1',v:900},{l:'Sem 2',v:1400},{l:'Sem 3',v:2291}]),
+    notes: load(K.NOTES, []),
+    kpis: load(K.KPIS, [
+      {val:'1,105',lbl:'Oyentes',delta:'↑ 43%'},
+      {val:'2,291',lbl:'Streams',delta:'↑ 90%'},
+      {val:'0',lbl:'Watch Hrs',delta:''},
+    ]),
+    pFilter:'all', nFilter:'all'
+  };
+
+  function load(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;}}
+  const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+  const esc=t=>{const d=document.createElement('div');d.textContent=t||'';return d.innerHTML;};
+  const toast=(m)=>{const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);};
+
+  // ── DATE HEADER ───────────────────────────────────────────
+  const now = new Date();
+  document.getElementById('hdrDate').textContent =
+    now.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'}).toUpperCase();
+
+  // ── KPIs ──────────────────────────────────────────────────
+  let editingKpi = 0;
+  function renderKpis(){
+    S.kpis.forEach((k,i)=>{
+      document.getElementById(`k${i}v`).textContent = k.val||'—';
+      document.getElementById(`k${i}l`).textContent = k.lbl;
+      const del = document.getElementById(`k${i}d`);
+      del.textContent = k.delta;
+      del.className = 'kpi-delta' + (k.delta.includes('↓')?' down':'');
+    });
+  }
+  window.openKpiModal=(i)=>{
+    editingKpi=i;
+    const k=S.kpis[i];
+    document.getElementById('kpiModalTitle').textContent=`Editar — ${k.lbl}`;
+    document.getElementById('kpiVal').value=k.val;
+    document.getElementById('kpiLbl').value=k.lbl;
+    document.getElementById('kpiDelta').value=k.delta;
+    document.getElementById('kpiModal').classList.add('open');
+  };
+  window.closeKpiModal=(e)=>{if(e.target===document.getElementById('kpiModal'))document.getElementById('kpiModal').classList.remove('open');};
+  window.saveKpi=()=>{
+    S.kpis[editingKpi]={
+      val:document.getElementById('kpiVal').value,
+      lbl:document.getElementById('kpiLbl').value,
+      delta:document.getElementById('kpiDelta').value,
+    };
+    save(K.KPIS,S.kpis); renderKpis();
+    document.getElementById('kpiModal').classList.remove('open');
+    toast('✅ KPI actualizado');
+  };
+
+  // ── TABS ──────────────────────────────────────────────────
+  document.getElementById('tabBar').addEventListener('click',e=>{
+    const t=e.target.closest('.tab');if(!t)return;
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel'+t.dataset.panel.charAt(0).toUpperCase()+t.dataset.panel.slice(1)).classList.add('active');
+  });
+
+  // ── PIPELINE ──────────────────────────────────────────────
+  function nextFriday(){const d=new Date();d.setDate(d.getDate()+(5-d.getDay()+7)%7||7);return d;}
+  function fmtShort(d){return d.toLocaleDateString('es-ES',{day:'numeric',month:'short'}).toUpperCase();}
+
+  function renderPipeline(){
+    const fridays=[];const f=nextFriday();
+    for(let i=0;i<4;i++){const d=new Date(f);d.setDate(d.getDate()+i*7);fridays.push(d);}
+    const assigned=new Array(4).fill(null);
+    S.songs.forEach(s=>{
+      if(!s.date)return;
+      const d=new Date(s.date+'T00:00:00');
+      const idx=fridays.findIndex(fr=>fr.getDate()===d.getDate()&&fr.getMonth()===d.getMonth()&&fr.getFullYear()===d.getFullYear());
+      if(idx!==-1&&!assigned[idx])assigned[idx]=s;
+    });
+    document.getElementById('pipelineEl').innerHTML=fridays.map((d,i)=>{
+      const s=assigned[i];
+      const stClass={ready:'st-ready',mix:'st-mix',master:'st-master',draft:'st-pending'}[s?.status]||'st-pending';
+      return `<div class="slot ${s?'filled':''}">
+        <div class="slot-w">Sem ${i+1}</div>
+        <div class="slot-d">${fmtShort(d)}</div>
+        <div class="${s?'slot-t':'slot-empty'}">${s?esc(s.name):'Disponible'}</div>
+        ${s?`<div class="slot-st ${stClass}">${s.status}</div>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  // ── SONGS ─────────────────────────────────────────────────
+  function renderSongs(){
+    const c=document.getElementById('songsEl');
+    const sel=document.getElementById('copySong');
+    sel.innerHTML='<option value="">— General —</option>'+S.songs.map(s=>`<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('');
+    if(!S.songs.length){c.innerHTML='<div style="text-align:center;padding:16px;font-family:Space Mono,monospace;font-size:10px;color:var(--dim);">Catálogo vacío</div>';return;}
+    c.innerHTML=S.songs.map((s,i)=>{
+      const ch=s.checks||{};
+      const stClass={ready:'st-ready',mix:'st-mix',master:'st-master',draft:'st-pending'}[s.status]||'st-pending';
+      return `<div class="song-card" data-i="${i}">
+        <div class="song-row">
+          <div>
+            <div class="song-name">${esc(s.name)}</div>
+            <div class="song-meta"><span class="genre-tag">${esc(s.genre||'Urbano')}</span>${s.date?`<span style="font-family:Space Mono,monospace;font-size:9px;color:var(--muted);">${s.date}</span>`:''}</div>
+          </div>
+          <div class="song-actions">
+            <div class="slot-st ${stClass}" style="cursor:default;">${s.status}</div>
+            <button class="btn btn-ghost btn-sm toggle-chk">⚙️</button>
+            <button class="btn btn-danger btn-sm del-song">✕</button>
+          </div>
+        </div>
+        <div class="chk-box" id="chk-${i}">
+          <div class="chk-grid">
+            ${['c1:Master WAV validado','c2:Arte 3000px RGB','c3:Spotify Pitch enviado','c4:Letras en Musixmatch'].map(x=>{
+              const [k,l]=x.split(':');
+              return `<label class="chk-item ${ch[k]?'done':''}"><input type="checkbox" data-k="${k}" ${ch[k]?'checked':''}> ${l}</label>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('addSongBtn').addEventListener('click',()=>{
+    const n=document.getElementById('sName').value.trim();
+    if(!n)return toast('⚠️ Escribe el nombre');
+    S.songs.push({name:n,genre:document.getElementById('sGenre').value.trim()||'Urbano',
+      status:document.getElementById('sStatus').value,date:document.getElementById('sDate').value,
+      id:Date.now(),checks:{}});
+    save(K.SONGS,S.songs);renderPipeline();renderSongs();
+    document.getElementById('sName').value='';toast('✅ Añadido al catálogo');
+  });
+
+  document.getElementById('songsEl').addEventListener('click',e=>{
+    const card=e.target.closest('.song-card');if(!card)return;
+    const i=parseInt(card.dataset.i);
+    if(e.target.classList.contains('del-song')){
+      S.songs.splice(i,1);save(K.SONGS,S.songs);renderPipeline();renderSongs();
+    } else if(e.target.classList.contains('toggle-chk')){
+      document.getElementById('chk-'+i).classList.toggle('open');
+    }
+  });
+  document.getElementById('songsEl').addEventListener('change',e=>{
+    if(!e.target.dataset.k)return;
+    const card=e.target.closest('.song-card');const i=parseInt(card.dataset.i);
+    if(!S.songs[i].checks)S.songs[i].checks={};
+    S.songs[i].checks[e.target.dataset.k]=e.target.checked;
+    save(K.SONGS,S.songs);
+    e.target.closest('.chk-item').classList.toggle('done',e.target.checked);
+  });
+
+  // ── WEEKLY CONTENT ────────────────────────────────────────
+  function getMonday(){const d=new Date();d.setDate(d.getDate()-(d.getDay()===0?6:d.getDay()-1));d.setHours(0,0,0,0);return d;}
+  const weekKey=getMonday().toISOString().split('T')[0];
+  const DAYS=[
+    {d:'LUN',slots:['☀️ 21:00','🌙 23:00']},
+    {d:'MAR',slots:['⚡ TEASER','🌙 23:00']},
+    {d:'MIÉ',slots:['☀️ 21:00','🌙 23:00']},
+    {d:'JUE',slots:['🎬 REEL','📺 PREM']},
+    {d:'VIE',slots:['🔥 RELEASE','📲 21:00']},
+    {d:'SÁB',slots:['☀️ 21:00','🌙 23:00']},
+    {d:'DOM',slots:['🎯 DW','☀️ 21:00']},
+  ];
+
+  if(!S.content[weekKey])
+    S.content[weekKey]=DAYS.map(d=>({day:d.d,slots:[false,false]}));
+
+  function renderWeek(){
+    document.getElementById('weekGrid').innerHTML=DAYS.map((day,di)=>{
+      const sData=S.content[weekKey]?.[di]||{slots:[false,false]};
+      return `<div class="day-col">
+        <div class="day-n">${day.d}</div>
+        <div class="day-slots">
+          ${day.slots.map((sl,si)=>`
+            <div class="dslot ${sData.slots[si]?'done':''}" data-d="${di}" data-s="${si}">
+              ${sl}<span class="time-badge">${sData.slots[si]?'✓':''}</span>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('weekGrid').addEventListener('click',e=>{
+    const sl=e.target.closest('.dslot');if(!sl)return;
+    const di=sl.dataset.d,si=sl.dataset.s;
+    S.content[weekKey][di].slots[si]=!S.content[weekKey][di].slots[si];
+    save(K.CONTENT,S.content);renderWeek();
+    toast(S.content[weekKey][di].slots[si]?'✅ Completado':'⬜ Pendiente');
+  });
+  document.getElementById('resetWeekBtn').addEventListener('click',()=>{
+    S.content[weekKey]=DAYS.map(d=>({day:d.d,slots:[false,false]}));
+    save(K.CONTENT,S.content);renderWeek();toast('↺ Semana reiniciada');
+  });
+
+  // ── COPY GENERATOR ────────────────────────────────────────
+  const COPIES={
+    hype:{
+      trap:(t)=>`🎯 GANCHO:\n"Llevo semanas construyendo algo que no suena a nada que ya escuchaste..."\n\nDESCRIPCIÓN:\nEl proceso de ${t||'este tema'} empezó desde otro ángulo. Sin fórmulas comerciales. Hecho real desde la calle. 🕹️💀\n\n#TrapLatino #Flow #MusicaUrbana #NuevoTema`,
+      dembow:(t)=>`🎯 GANCHO:\n"Esto lo hice pensando en el barrio, no en el algoritmo..."\n\nDESCRIPCIÓN:\n${t||'Este tema'} tiene el DNA del dembow dominicano puro. Sin pautas. Sin artificios. Puro tigueraje. 🇩🇴🔥\n\n#Dembow #MusicaDominicana #RD #Saoco`,
+      afrobeat:(t)=>`🎯 GANCHO:\n"This groove came from somewhere else. Listen."\n\nDESCRIPCIÓN:\n${t||'Este tema'} es afrobeat desde adentro. El groove te atrapa antes de que lo notes. 🌍🥁\n\n#Afrobeats #Groove #AfroMusic #NewMusic`,
+      bachata:(t)=>`🎯 GANCHO:\n"¿Cuándo fue la última vez que una canción te hizo sentir todo al mismo tiempo?"\n\nDESCRIPCIÓN:\n${t||'Este tema'} lo hice para ese momento exacto. La bachata que necesitabas sin saber que la necesitabas. 🌹\n\n#Bachata #NuevaBachata #MusicaLatina`,
+      rnb:(t)=>`🎯 GANCHO:\n"Some songs don't need an explanation. Just the right headphones."\n\nDESCRIPCIÓN:\n${t||'Esta canción'} vive en ese espacio íntimo. R&B sin filtros, directo. 🎙️\n\n#RnB #SlowJam #Soul #LatinRnB`,
+      pop:(t)=>`🎯 GANCHO:\n"El tema que no puedes dejar de escuchar..."\n\nDESCRIPCIÓN:\n${t||'Nuevo tema'} ya en las plataformas. Pop urbano con identidad. Escúchalo. 🎵\n\n#PopUrbano #PopLatino #NuevoTema`,
+      drill:(t)=>`🎯 GANCHO:\n"No vine a pedir permiso."\n\nDESCRIPCIÓN:\n${t||'Este tema'} es drill desde adentro. Sin disculpas. Sin filtros. 🔪\n\n#Drill #DrillLatino #UKDrill #Flow`,
+    },
+    drop:{
+      trap:(t)=>`🎯 GANCHO:\n"El viernes a las 00:00 UTC ya está fuera. Sin aviso previo."\n\nDESCRIPCIÓN:\nYA DISPONIBLE en Spotify, Apple Music, YouTube Music y todas las plataformas. ${t||'Nuevo tema'} — trap latino sin filtros. Link en bio. 🚀\n\n#TrapLatino #OutNow #NuevoLanzamiento`,
+      dembow:(t)=>`🎯 GANCHO:\n"Ya fuera. Sin más preámbulo. Puro saoco."\n\nDESCRIPCIÓN:\n${t||'Nuevo tema'} disponible ahora en todas las plataformas. Dembow dominicano al 100%. 🇩🇴🔥\n\n#Dembow #OutNow #MusicaDominicana`,
+      afrobeat:(t)=>`🎯 GANCHO:\n"It's out. No hype. Just music."\n\nDESCRIPCIÓN:\n${t||'New track'} available now on all platforms. Afrobeats from the inside. Tap the link. 🌍\n\n#Afrobeats #OutNow #NewMusic`,
+      bachata:(t)=>`🎯 GANCHO:\n"Ya disponible. Para los que lo sienten de verdad."\n\nDESCRIPCIÓN:\n${t||'Nueva bachata'} en todas las plataformas desde hoy. Escúchala y cuéntame. 🌹 Link en bio.\n\n#Bachata #OutNow #NuevaBachata`,
+      rnb:(t)=>`🎯 GANCHO:\n"Out now. Put your headphones on."\n\nDESCRIPCIÓN:\n${t||'Nuevo R&B'} disponible ahora en Spotify y Apple Music. Escúchalo completo. 🎙️\n\n#RnB #OutNow #NewMusic`,
+      pop:(t)=>`🎯 GANCHO:\n"¡Ya está fuera! El tema del verano llegó."\n\nDESCRIPCIÓN:\n${t||'Nuevo tema'} disponible en todas las plataformas. Compártelo. Link en bio. 🎵\n\n#PopUrbano #OutNow #NuevoTema`,
+      drill:(t)=>`🎯 GANCHO:\n"Out. No announcement needed."\n\nDESCRIPCIÓN:\n${t||'Nuevo drill'} en todas las plataformas ahora mismo. Escúchalo. 🔪\n\n#Drill #OutNow #NewMusic`,
+    },
+    bts:{
+      trap:(t)=>`🎯 GANCHO:\n"Así suena el trap latino cuando no hay presupuesto publicitario, solo talento..."\n\nDESCRIPCIÓN:\nAbriendo la sesión de ${t||'este tema'}. El proceso real: el DAW, el micrófono, los errores. Sin editar. 🎛️\n\n#TrapLatino #BTS #StudioVlog #ProducerLife`,
+      dembow:(t)=>`🎯 GANCHO:\n"Así se construye un dembow desde cero..."\n\nDESCRIPCIÓN:\nProceso completo de ${t||'este dembow'}. El beat, la letra, la grabación. Desde el barrio hasta la plataforma. 🎚️🇩🇴\n\n#Dembow #BTS #MusicProduction #StudioLife`,
+      afrobeat:(t)=>`🎯 GANCHO:\n"Building this afro groove from scratch. Here's how."\n\nDESCRIPCIÓN:\nBehind the scenes of ${t||'this track'}. Drums, bass, atmosphere — the full process. 🥁🌍\n\n#Afrobeats #BTS #BeatMaking #StudioVlog`,
+      bachata:(t)=>`🎯 GANCHO:\n"La primera vez que escuché la guitarra de este tema supe que era especial..."\n\nDESCRIPCIÓN:\nProceso completo de ${t||'esta bachata'}. Desde el demo hasta el master final. 🎸\n\n#Bachata #BTS #ProduccionMusical`,
+      rnb:(t)=>`🎯 GANCHO:\n"Recording vocals at 2AM hits different."\n\nDESCRIPCIÓN:\nBehind the sessions of ${t||'this R&B track'}. Real process, real moments. 🎙️\n\n#RnB #BTS #StudioLife #Recording`,
+      pop:(t)=>`🎯 GANCHO:\n"Así se construye un hit desde cero..."\n\nDESCRIPCIÓN:\nEl proceso completo de ${t||'este tema'} — producción, vocal, mezcla. 🎵\n\n#PopUrbano #BTS #MusicProduction`,
+      drill:(t)=>`🎯 GANCHO:\n"Building this drill beat. Watch."\n\nDESCRIPCIÓN:\nBeat making session for ${t||'this drill track'}. Raw and unfiltered. 🔪🎛️\n\n#Drill #BeatMaking #BTS #DrillProducer`,
+    },
+    desamor:{
+      trap:(t)=>`🎯 GANCHO:\n"¿Alguna vez dejaste de pensar en alguien sin darte cuenta de cuándo pasó?"\n\nDESCRIPCIÓN:\n${t||'Este tema'} es para ese momento exacto. Trap melódico que dice lo que no se dice en voz alta. 🖤\n\n#TrapLatino #Desamor #FlowMelancolico`,
+      dembow:(t)=>`🎯 GANCHO:\n"Las palabras que no le dijiste ahora tienen melodía..."\n\nDESCRIPCIÓN:\nDembow con corazón. ${t||'Este tema'} es real. Para quien lo entiende. 🇩🇴💔\n\n#Dembow #Desamor #MusicaDominicana`,
+      bachata:(t)=>`🎯 GANCHO:\n"Hay cosas que solo la bachata puede decir..."\n\nDESCRIPCIÓN:\n${t||'Esta bachata'} nació de lo real. Para los que vivieron eso. 🌹💔\n\n#Bachata #Desamor #BachataRomantica`,
+      rnb:(t)=>`🎯 GANCHO:\n"That feeling when you realize you're finally over it."\n\nDESCRIPCIÓN:\n${t||'This song'} is for that moment. R&B that speaks what words can't. 🎙️💫\n\n#RnB #Soul #Feelings #LatinRnB`,
+      afrobeat:(t)=>`🎯 GANCHO:\n"Sometimes the groove is the only thing that heals."\n\nDESCRIPCIÓN:\n${t||'This track'} — afrobeats with emotion. Dance through the feeling. 🌍💔\n\n#Afrobeats #Vibes #NewMusic`,
+      pop:(t)=>`🎯 GANCHO:\n"¿Por qué las mejores canciones siempre llegan cuando más las necesitas?"\n\nDESCRIPCIÓN:\n${t||'Nuevo tema'} — pop urbano con feeling real. Para escuchar a solas. 🎵💔\n\n#PopUrbano #Desamor #MusicaLatina`,
+      drill:(t)=>`🎯 GANCHO:\n"Pain hits different at 3AM."\n\nDESCRIPCIÓN:\n${t||'This track'} — drill with emotion. Raw and real. 🖤🔪\n\n#Drill #DarkTrap #Pain`,
+    },
+    calle:{
+      trap:(t)=>`🎯 GANCHO:\n"El barrio siempre habla. Nosotros solo lo ponemos en música."\n\nDESCRIPCIÓN:\n${t||'Este tema'} es para los que vienen del mismo lugar. Sin filtros, sin pautas, solo flow real. 🏙️💀\n\n#TrapLatino #Calle #FlowReal #MusicaUrbana`,
+      dembow:(t)=>`🎯 GANCHO:\n"Esto es para los que saben lo que es saoco de verdad."\n\nDESCRIPCIÓN:\n${t||'Este dembow'} tiene el DNA de la calle dominicana. Puro y sin mezcla. 🇩🇴🔥\n\n#Dembow #Calle #Tigueraje #Saoco`,
+      drill:(t)=>`🎯 GANCHO:\n"The streets don't lie."\n\nDESCRIPCIÓN:\n${t||'This track'} comes from the real. Drill with no apologies. 🔪🏙️\n\n#Drill #Streets #DrillLatino`,
+      afrobeat:(t)=>`🎯 GANCHO:\n"Real music from real streets."\n\nDESCRIPCIÓN:\n${t||'This afrobeat'} is from the ground up. No label. No filter. 🌍🔥\n\n#Afrobeats #IndependentArtist #RealMusic`,
+      bachata:(t)=>`🎯 GANCHO:\n"La bachata siempre fue de la calle primero."\n\nDESCRIPCIÓN:\n${t||'Esta bachata'} tiene raíces reales. Música de barrio con corazón. 🌹🏙️\n\n#Bachata #MusicaDominicana #Calle`,
+      rnb:(t)=>`🎯 GANCHO:\n"Urban, authentic, real."\n\nDESCRIPCIÓN:\n${t||'This R&B'} comes from lived experience. No industry formula. 🎙️🏙️\n\n#RnB #Urban #Authentic`,
+      pop:(t)=>`🎯 GANCHO:\n"Pop con actitud callejera. No todo tiene que ser perfecto."\n\nDESCRIPCIÓN:\n${t||'Nuevo tema'} — pop urbano con identidad real. Sin fórmulas. 🎵🏙️\n\n#PopUrbano #Actitud #MusicaLatina`,
+    },
+    teaser:{
+      trap:(t)=>`🎯 GANCHO:\n"Algo viene. No puedo decir más todavía..."\n\n[15 segundos del hook más oscuro]\n\nDESCRIPCIÓN:\nEste viernes. ${t||'Nuevo tema'}. Trap latino desde adentro. 🕹️👀\n\n#TrapLatino #Pronto #NewMusic #Teaser`,
+      dembow:(t)=>`🎯 GANCHO:\n"El saoco llega el viernes a las 00:00..."\n\n[15 segundos del beat]\n\nDESCRIPCIÓN:\n${t||'Nuevo dembow'} — este viernes. ¿Estás listo? 🇩🇴🔥👀\n\n#Dembow #Pronto #Teaser #MusicaDominicana`,
+      afrobeat:(t)=>`🎯 GANCHO:\n"Something is coming this Friday."\n\n[15 seconds of groove]\n\nDESCRIPCIÓN:\n${t||'New afrobeat track'} dropping Friday 00:00 UTC. Stay ready. 🌍⚡\n\n#Afrobeats #Teaser #FridayDrop`,
+      bachata:(t)=>`🎯 GANCHO:\n"Este viernes la bachata tiene algo nuevo..."\n\n[15 segundos de guitarra]\n\nDESCRIPCIÓN:\n${t||'Nueva bachata'} — este viernes. Para los que la sienten. 🌹👀\n\n#Bachata #Teaser #Pronto`,
+      rnb:(t)=>`🎯 GANCHO:\n"New R&B dropping this Friday."\n\n[15 seconds of the hook]\n\nDESCRIPCIÓN:\n${t||'New track'} out Friday 00:00 UTC. 🎙️👀\n\n#RnB #FridayDrop #NewMusic`,
+      pop:(t)=>`🎯 GANCHO:\n"Este viernes hay novedad. No me preguntes qué es todavía..."\n\nDESCRIPCIÓN:\n${t||'Nuevo tema'} llega este viernes. 🎵👀\n\n#PopUrbano #Pronto #Teaser #NuevoTema`,
+      drill:(t)=>`🎯 GANCHO:\n"Friday. That's all."\n\nDESCRIPCIÓN:\n${t||'New drill'} dropping Friday. No more details needed. 🔪👀\n\n#Drill #FridayDrop #Teaser`,
+    },
+  };
+
+  document.getElementById('genCopyBtn').addEventListener('click',()=>{
+    const song=document.getElementById('copySong').value;
+    const genre=document.getElementById('copyGenre').value;
+    const angle=document.getElementById('copyAngle').value;
+    const fn=COPIES[angle]?.[genre];
+    if(!fn)return toast('⚠️ Combinación no disponible');
+    const text=fn(song);
+    const out=document.getElementById('copyOut');
+    out.textContent=text;out.classList.add('show');
+    document.getElementById('copyCopyBtn').style.display='inline-flex';
+  });
+  document.getElementById('copyCopyBtn').addEventListener('click',()=>{
+    navigator.clipboard?.writeText(document.getElementById('copyOut').textContent);toast('📋 Copiado');
+  });
+
+  // ── SUNO PRESETS ──────────────────────────────────────────
+  const SUNO={
+    genres:[
+      {name:'Dark Afrobeat',tags:'Dark heavy Afrobeat, crushing sub-bass, syncopated congas, physical low-end weight, 95 BPM'},
+      {name:'Dembow Callejero',tags:'Dominican Dembow, raw 303 riddim, aggressive metallic snare, rapid energetic tempo, 122 BPM'},
+      {name:'Trap Oscuro',tags:'Dark ambient trap, heavy sliding 808 bass, fast hi-hat rolls, eerie synth bells, 130 BPM'},
+      {name:'UK & Latin Drill',tags:'Slamming drill drums, sliding 808 glides, dark orchestral strings, aggressive stance, 142 BPM'},
+      {name:'R&B Neo-Soul',tags:'Smooth intimate R&B, jazzy Rhodes chords, subtle Latin percussion warmth, late night vibe, 88 BPM'},
+      {name:'Dancehall Grit',tags:'Raw Jamaican dancehall riddim, heavy dub bassline, crisp spatial echoes, industrial edge, 102 BPM'},
+      {name:'Bachata Urbana',tags:'Modern bachata, electric guitar with sustain, urban trap hi-hats, romantic minor melody, 118 BPM'},
+      {name:'Afro House Tribal',tags:'Tribal Afro house, driving 4x4 kick drum, organic live percussion layers, hypnotic loops, 123 BPM'},
+      {name:'Pluggnb Dark',tags:'Pluggnb, slow emotional 808 bass, dreamy atmospheric pads, dark R&B melody, 65 BPM'},
+    ],
+    vocals:[
+      {name:'Dominican Cortao',tags:'Male voice, spoken raw delivery, authentic Dominican barrio accent, aggressive cortao pronunciation without S endings, dry and upfront'},
+      {name:'R&B Melódico',tags:'Melancholic male vocals, smooth urban cadence, subtle Spanish delivery, intimate tone, no harmonies'},
+      {name:'Drill Rap Rudo',tags:'Fast-paced aggressive rap delivery, deep gravelly voice, double-time flow, direct unprocessed mix'},
+      {name:'Whisper Dark',tags:'Whispered eerie male vocals, breathy cadence, mysterious and haunting vocal performance'},
+      {name:'Auto-tune Trap',tags:'Heavily stylized auto-tune vocals, robotic futuristic trap cadence, crying emotional execution'},
+      {name:'Afro Hype Chant',tags:'Classic raw dancehall chanting, rhythmic soundclash hype delivery, energetic street tone'},
+    ],
+    atmos:[
+      {name:'Opresiva Drone',tags:'minimal and sinister synth drones, oppressive atmosphere, tension-building filter pad'},
+      {name:'Cyberpunk Neón',tags:'Cyberpunk cinematic synths, bright retro neon filters, high-tech electronic texture, sharp chords'},
+      {name:'Lo-Fi Vinilo',tags:'Crisp vinyl dust noise, warm analog tape hiss, vintage tube preamp saturation, unpolished'},
+      {name:'Melancolía Espacial',tags:'Weighty melancholic mood, slow emotional synth decay, spacious cosmic reverb wash'},
+      {name:'Grit Industrial',tags:'Gritty distorted industrial textures, overdrive rhythmic noise, lo-fi mechanical aesthetics'},
+    ]
+  };
+
+  const LEO={
+    covers:[
+      {name:'Trono Oscuro',tags:'Wide-angle cinematic photo of empty weathered leather throne on rooftop at night, purple and gold rim lighting, dark luxury aesthetic, no people, square format, photorealistic'},
+      {name:'Coche Madrugada',tags:'Photorealistic interior of luxury car at night, empty, dashboard glow amber, windshield showing blurred city neon lights, cinematic grain, no brand logos, square format'},
+      {name:'Cover Minimalista',tags:'Minimalist music single cover, dark background #030308, glowing mint green text centered, geometric abstract mark, flat vector style, square format, no clutter'},
+      {name:'Calle Nocturna',tags:'Cinematic photo of empty wet street at night, neon reflections on pavement, urban Dominican/Spanish aesthetic, atmospheric fog, no people, photorealistic, square format'},
+      {name:'Estudio Oscuro',tags:'Dark music studio interior, glowing equipment lights, moody purple and teal atmosphere, analog gear on desk, no people, cinematic, square format'},
+    ],
+    content:[
+      {name:'BTS Estudio',tags:'Behind the scenes photo in recording studio, artist at microphone, dramatic side lighting, dark atmosphere, authentic candid moment, photorealistic, warm tones'},
+      {name:'Retrato Urbano',tags:'Urban portrait photo, male artist in streetwear, dark alley or rooftop setting, dramatic cinematic lighting, authentic attitude, no forced poses, photorealistic'},
+      {name:'Portátil + Beat',tags:'Overhead flat lay photo of laptop with DAW open on dark desk, coffee cup, headphones, minimal producer aesthetic, moody lighting, photorealistic'},
+      {name:'Outfit Drop',tags:'Full body fashion photo, male, urban streetwear — oversized hoodie, baggy jeans, sneakers, gold chain, dark moody location, cinematic quality, photorealistic'},
+      {name:'Manos en Consola',tags:'Close-up photo of hands on mixing console or synthesizer, dramatic studio lighting, bokeh background, golden hour tones, photorealistic'},
+    ],
+    fx:[
+      {name:'Glitch Face',tags:'TikTok face filter concept, glitch effect overlay, mint green and purple neon distortion, digital corruption aesthetic, RGB split effect'},
+      {name:'Neon Aura',tags:'Face filter with floating neon particles, mint green glow around subject, dark background, ethereal music producer aesthetic'},
+      {name:'Smoke Beat',tags:'Beat-reactive smoke effect in mint and purple, expands on audio peaks, minimal face overlay, dark background'},
+      {name:'Matrix Rain',tags:'Falling green digital characters over face filter, Matrix aesthetic, dark background, subtle and musical'},
+    ]
+  };
+
+  function buildGrid(id,data,cls,targetId,sep=''){
+    const el=document.getElementById(id);
+    el.innerHTML=data.map(x=>`<div class="db-item ${cls}" data-tags="${x.tags.replace(/"/g,'&quot;')}">${x.name}<span>+ Añadir</span></div>`).join('');
+    el.addEventListener('click',e=>{
+      const item=e.target.closest('.db-item');if(!item)return;
+      const t=document.getElementById(targetId);
+      t.value=t.value?t.value+sep+item.dataset.tags:item.dataset.tags;
+      toast('✅ Preset cargado');
+    });
+  }
+
+  buildGrid('dbGenres',SUNO.genres,'suno','archStyle',', ');
+  buildGrid('dbVocals',SUNO.vocals,'suno','archVocal','');
+  buildGrid('dbAtmos',SUNO.atmos,'suno','archStyle',', ');
+  buildGrid('dbLeoCovers',LEO.covers,'leo','leoPrompt','');
+  buildGrid('dbLeoContent',LEO.content,'leo','leoPrompt','');
+  buildGrid('dbLeoFx',LEO.fx,'leo','leoPrompt','');
+
+  document.getElementById('buildSunoBtn').addEventListener('click',()=>{
+    const style=document.getElementById('archStyle').value.trim();
+    if(!style)return toast('⚠️ Define el ritmo primero');
+    const vocal=document.getElementById('archVocal').value.trim();
+    const a=document.getElementById('archA').value.trim();
+    const b=document.getElementById('archB').value.trim();
+    const prompt=`[Style Parameters: ${style}]\n[Vocal Architecture: ${vocal||'Instrumental'}]\n\n${a?`[Verse]\n${a}`:''}\n\n${b?`[Chorus]\n${b}`:''}\n\n[Abrupt Stop, No Melodic Outro, Gritty Production]`.trim();
+    S.prompts.push({id:Date.now(),title:'Estructura Suno '+new Date().toLocaleDateString('es-ES'),type:'suno',prompt});
+    save(K.PROMPTS,S.prompts);renderPrompts();
+    document.getElementById('archA').value='';document.getElementById('archB').value='';
+    toast('🛠️ Estructura guardada');
+  });
+
+  document.getElementById('saveLeoBtn').addEventListener('click',()=>{
+    const p=document.getElementById('leoPrompt').value.trim();
+    if(!p)return toast('⚠️ El prompt está vacío');
+    S.prompts.push({id:Date.now(),title:'Leonardo '+new Date().toLocaleDateString('es-ES'),type:'leonardo',prompt:p});
+    save(K.PROMPTS,S.prompts);renderPrompts();
+    document.getElementById('leoPrompt').value='';
+    toast('💾 Prompt guardado');
+  });
+
+  // ── PROMPTS ───────────────────────────────────────────────
+  const PBADGE={'suno':'pb-suno','leonardo':'pb-leo','claude':'pb-claude','fx':'pb-fx'};
+  const PLABEL={'suno':'SUNO','leonardo':'LEONARDO','claude':'CLAUDE','fx':'EFFECT HOUSE'};
+
+  function renderPrompts(){
+    const list=document.getElementById('promptList');
+    const filtered=S.pFilter==='all'?S.prompts:S.prompts.filter(p=>p.type===S.pFilter);
+    if(!filtered.length){list.innerHTML='<div style="text-align:center;padding:14px;font-family:Space Mono,monospace;font-size:10px;color:var(--dim);">Repositorio vacío</div>';return;}
+    list.innerHTML=filtered.map(p=>`
+      <div class="prompt-card" data-id="${p.id}">
+        <div class="prompt-hdr">
+          <div class="prompt-title">${esc(p.title)}</div>
+          <span class="pbadge ${PBADGE[p.type]||'pb-suno'}">${PLABEL[p.type]||p.type}</span>
+        </div>
+        <div class="prompt-txt">${esc(p.prompt)}</div>
+        <div class="prompt-acts">
+          <button class="btn btn-ghost btn-sm p-copy">📋 Copiar</button>
+          <button class="btn btn-danger btn-sm p-del">✕</button>
+        </div>
+      </div>`).join('');
+  }
+
+  document.getElementById('promptChips').addEventListener('click',e=>{
+    const ch=e.target.closest('.chip');if(!ch)return;
+    document.querySelectorAll('#promptChips .chip').forEach(c=>c.classList.remove('active'));
+    ch.classList.add('active');S.pFilter=ch.dataset.f;renderPrompts();
+  });
+  document.getElementById('promptList').addEventListener('click',e=>{
+    const card=e.target.closest('.prompt-card');if(!card)return;
+    const id=parseInt(card.dataset.id);
+    if(e.target.classList.contains('prompt-txt')){e.target.classList.toggle('open');}
+    else if(e.target.classList.contains('p-copy')){
+      const item=S.prompts.find(p=>p.id===id);
+      if(item){navigator.clipboard?.writeText(item.prompt);toast('📋 Copiado');}
+    } else if(e.target.classList.contains('p-del')){
+      S.prompts=S.prompts.filter(p=>p.id!==id);save(K.PROMPTS,S.prompts);renderPrompts();
+    }
+  });
+  document.getElementById('addPromptBtn').addEventListener('click',()=>{
+    const p=document.getElementById('pText').value.trim();
+    if(!p)return toast('⚠️ Escribe el prompt');
+    S.prompts.push({id:Date.now(),title:document.getElementById('pTitle').value.trim()||'Prompt Manual',type:document.getElementById('pType').value,prompt:p});
+    save(K.PROMPTS,S.prompts);renderPrompts();
+    document.getElementById('pTitle').value='';document.getElementById('pText').value='';
+    toast('💾 Guardado');
+  });
+
+  // ── NOTAS ─────────────────────────────────────────────────
+  const NOTE_COLORS={beat:'nt-beat',letra:'nt-letra',visual:'nt-visual',idea:'nt-idea'};
+  const NOTE_LABELS={beat:'BEAT',letra:'LETRA',visual:'VISUAL',idea:'IDEA'};
+
+  function renderNotes(){
+    const list=document.getElementById('notesList');
+    const filtered=S.nFilter==='all'?S.notes:S.notes.filter(n=>n.type===S.nFilter);
+    if(!filtered.length){list.innerHTML='<div style="text-align:center;padding:14px;font-family:Space Mono,monospace;font-size:10px;color:var(--dim);">Sin ideas guardadas</div>';return;}
+    list.innerHTML=[...filtered].reverse().map((n,i)=>`
+      <div class="note-card" data-id="${n.id}">
+        <div class="note-top">
+          <div style="display:flex;gap:5px;align-items:center;">
+            <span class="note-tag ${NOTE_COLORS[n.type]||'nt-idea'}">${NOTE_LABELS[n.type]||n.type}</span>
+            ${n.genre?`<span style="font-family:Space Mono,monospace;font-size:7px;color:var(--muted);">${esc(n.genre)}</span>`:''}
+          </div>
+          <div style="display:flex;gap:5px;align-items:center;">
+            <span class="note-date">${n.date}</span>
+            <button class="btn btn-danger btn-sm n-del" style="padding:3px 7px;font-size:8px;">✕</button>
+          </div>
+        </div>
+        <div class="note-text">${esc(n.text)}</div>
+      </div>`).join('');
+  }
+
+  document.getElementById('addNoteBtn').addEventListener('click',()=>{
+    const t=document.getElementById('noteText').value.trim();
+    if(!t)return toast('⚠️ Escribe la idea');
+    S.notes.push({id:Date.now(),type:document.getElementById('noteType').value,
+      genre:document.getElementById('noteGenre').value.trim(),text:t,
+      date:new Date().toLocaleDateString('es-ES',{day:'numeric',month:'short'})});
+    save(K.NOTES,S.notes);renderNotes();
+    document.getElementById('noteText').value='';toast('⚡ Idea guardada');
+  });
+  document.getElementById('notesList').addEventListener('click',e=>{
+    if(!e.target.classList.contains('n-del'))return;
+    const card=e.target.closest('.note-card');const id=parseInt(card.dataset.id);
+    S.notes=S.notes.filter(n=>n.id!==id);save(K.NOTES,S.notes);renderNotes();
+  });
+  document.getElementById('noteChips').addEventListener('click',e=>{
+    const ch=e.target.closest('.chip');if(!ch)return;
+    document.querySelectorAll('#noteChips .chip').forEach(c=>c.classList.remove('active'));
+    ch.classList.add('active');S.nFilter=ch.dataset.f;renderNotes();
+  });
+
+  // ── ANALYTICS ─────────────────────────────────────────────
+  function renderChart(){
+    const el=document.getElementById('chartEl');
+    if(!S.stats.length){el.innerHTML='<div style="font-family:Space Mono,monospace;font-size:10px;color:var(--dim);margin:auto;">Sin datos</div>';return;}
+    const max=Math.max(...S.stats.map(s=>s.v),1);
+    el.innerHTML=S.stats.map(s=>`
+      <div class="bar-w">
+        <div class="bar" style="height:${(s.v/max)*100}%"><span class="bv">${s.v>=1000?(s.v/1000).toFixed(1)+'K':s.v}</span></div>
+        <div class="bl">${s.l}</div>
+      </div>`).join('');
+  }
+  document.getElementById('addStatBtn').addEventListener('click',()=>{
+    const l=document.getElementById('statL').value.trim();
+    const v=parseInt(document.getElementById('statV').value);
+    if(!l||isNaN(v))return toast('⚠️ Datos inválidos');
+    S.stats.push({l,v});if(S.stats.length>8)S.stats.shift();
+    save(K.STATS,S.stats);renderChart();
+    document.getElementById('statL').value='';document.getElementById('statV').value='';
+  });
+  document.getElementById('resetStatBtn').addEventListener('click',()=>{S.stats=[];save(K.STATS,S.stats);renderChart();});
+
+  // ── INIT ──────────────────────────────────────────────────
+  renderKpis();renderPipeline();renderSongs();renderWeek();
+  renderPrompts();renderNotes();renderChart();
+
+  // Set default release date
+  const f=new Date();f.setDate(f.getDate()+(5-f.getDay()+7)%7||7);
+  document.getElementById('sDate').valueAsDate=f;
+})();
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js")
+        .then(reg => console.log("[MKEYZ] SW registrado:", reg.scope))
+        .catch(err => console.warn("[MKEYZ] SW error:", err));
+    });
+  }
+</script>
+</body>
+</html>
